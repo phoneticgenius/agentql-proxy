@@ -1,5 +1,5 @@
 const fs = require('fs');
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey) {
   const boundary = '------------------------abcdef1234567890';
