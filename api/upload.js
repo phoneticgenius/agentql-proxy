@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       contentType,
     });
 
-    const graphqlBody = {
+    const graphqlQuery = {
   query: `query {
     job_posting {
       job_title
