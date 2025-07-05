@@ -21,9 +21,10 @@ export default async function handler(req, res) {
       contentType: contentType,
     });
 
-    // The API expects a JSON field named 'query' and optionally 'params'
-    formData.append('query', queryPrompt);
-    formData.append('params', JSON.stringify({ mode: 'fast' }));
+   form_data.append('body', JSON.stringify({
+  query: '{ project { id lowest_bidder lowest_bid } }',
+  params: { mode: 'fast' }
+}));
 
     console.log('Sending multipart/form-data to AgentQL...');
 
