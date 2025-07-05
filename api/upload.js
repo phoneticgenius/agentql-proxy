@@ -1,5 +1,7 @@
 const fs = require('fs');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Dynamic import to fix ESM error with node-fetch
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey) {
   const boundary = '------------------------abcdef1234567890';
@@ -21,7 +23,7 @@ async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey
   parts.push(Buffer.from(`--${boundary}${CRLF}`));
   parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="${fileName}"${CRLF}`));
   parts.push(Buffer.from(`Content-Type: application/octet-stream${CRLF}${CRLF}`));
-  parts.push(fileBuffer);  // raw file data
+  parts.push(fileBuffer); // raw file data
   parts.push(Buffer.from(CRLF)); // CRLF after file data
 
   // --boundary + body (json) part header
@@ -48,6 +50,7 @@ async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey
     body: multipartBody
   });
 
+  // Parse JSON response
   const data = await response.json();
   return data;
 }
@@ -55,10 +58,10 @@ async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey
 // Example usage:
 (async () => {
   try {
-    const filePath = './job_offer.pdf';
+    const filePath = './job_offer.pdf';  // adjust your local file path here
     const fileName = 'job_offer.pdf';
     const queryPrompt = '{ job_posting { job_title } }';
-    const apiKey = process.env.AGENTQL_API_KEY;
+    const apiKey = process.env.AGENTQL_API_KEY; // make sure this is set in your environment
 
     const result = await uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey);
     console.log('Response:', result);
