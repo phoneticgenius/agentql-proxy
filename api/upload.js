@@ -1,20 +1,26 @@
-// /api/upload.js  (Vercel Serverless Function – CommonJS style)
-const FormData  = require('form-data');
+const FormData = require('form-data');
 const { Readable } = require('stream');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
-    const { fileBase64, fileName = 'document.pdf', contentType = 'application/pdf', queryPrompt } = req.body;
+    if (!req.body || typeof req.body === 'string') {
+      req.body = JSON.parse(req.body); // if body is raw string
+    }
 
-    if (!fileBase64)   return res.status(400).json({ error: 'Missing fileBase64' });
+    const {
+      fileBase64,
+      fileName = 'document.pdf',
+      contentType = 'application/pdf',
+      queryPrompt = '{ job_posting { job_title } }'
+    } = req.body;
 
-    // 1. Decode Base64 → Buffer → Stream
+    if (!fileBase64) return res.status(400).json({ error: 'Missing fileBase64' });
+
     const fileBuffer = Buffer.from(fileBase64, 'base64');
-    const fileStream = Readable.from(fileBuffer);            // stream is safer for form-data
+    const fileStream = Readable.from(fileBuffer);
 
-    // 2. Build FormData exactly like AgentQL docs
     const formData = new FormData();
     formData.append('file', fileStream, {
       filename: fileName,
@@ -22,18 +28,15 @@ module.exports = async (req, res) => {
       knownLength: fileBuffer.length
     });
 
-    // body: **only** the query
-    const sanitizedQuery = (queryPrompt || '{ job_posting { job_title } }').replace(/\s+/g, ' ').trim();
-    formData.append('body', JSON.stringify({ query: sanitizedQuery }));
-
-    // params: its own part
+    // Clean query
+    const query = queryPrompt.replace(/\s+/g, ' ').trim();
+    formData.append('body', JSON.stringify({ query }));
     formData.append('params', JSON.stringify({ mode: 'fast' }));
 
-    // 3. Send
     const response = await fetch('https://api.agentql.com/v1/query-document', {
       method: 'POST',
       headers: {
-        'X-API-Key': process.env.AGENTQL_API_KEY,   // keep this secret in Vercel env vars
+        'X-API-Key': process.env.AGENTQL_API_KEY,
         ...formData.getHeaders()
       },
       body: formData
@@ -41,11 +44,15 @@ module.exports = async (req, res) => {
 
     const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) return res.status(response.status).json(data);
+    if (!response.ok) {
+      console.error('AgentQL returned error:', response.status, data);
+      return res.status(response.status).json(data);
+    }
+
     return res.status(200).json(data);
 
   } catch (err) {
-    console.error('Proxy error:', err);
+    console.error('Upload error:', err);
     return res.status(500).json({ error: err.message });
   }
 };
