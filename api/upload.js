@@ -46,6 +46,8 @@ async function uploadFileManualMultipart(fileBuffer, fileName, queryPrompt, apiK
 
 export default async function handler(req, res) {
   try {
+    console.log('Request body:', req.body);
+
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
