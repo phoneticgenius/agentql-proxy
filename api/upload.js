@@ -36,13 +36,10 @@ export default async function handler(req, res) {
       knownLength: fileBuffer.length
     });
 
-   const graphqlQuery = queryPrompt && typeof queryPrompt === 'string'
+   const graphqlQuery = (queryPrompt && typeof queryPrompt === 'string'
   ? queryPrompt
-  : `query {
-    job_posting {
-      job_title
-    }
-  }`;
+  : `{ job_posting { job_title } }`).replace(/\s+/g, ' ').trim();
+
 
 
     console.log('GraphQL query to send:', graphqlQuery);
