@@ -2,38 +2,27 @@ import FormData from 'form-data';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method Not Allowed' });
-    return;
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    const { fileBase64, fileName, contentType } = req.body;
-    console.log('Received fileName:', fileName);
-    console.log('Received contentType:', contentType);
+    const { fileBase64, fileName, contentType, queryPrompt } = req.body;
 
     const fileBuffer = Buffer.from(fileBase64, 'base64');
-    console.log('file size (bytes):', fileBuffer.length);
 
     const formData = new FormData();
     formData.append('file', fileBuffer, {
       filename: fileName,
-      contentType: contentType,
+      contentType,
     });
 
-    const graphqlQuery = `
-      query {
-        job_posting {
-          job_title
-        }
-      }
-    `;
+    // Ensure queryPrompt is a string with your GraphQL query
+    const graphqlQuery = queryPrompt || '{ job_posting { job_title } }';
 
     formData.append('body', JSON.stringify({
       query: graphqlQuery,
       params: { mode: 'fast' }
     }));
-
-    console.log('Sending multipart/form-data to AgentQL...');
 
     const response = await fetch('https://api.agentql.com/v1/query-document', {
       method: 'POST',
@@ -45,9 +34,13 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log('AgentQL response:', data);
-    res.status(response.status).json(data);
 
+    if (!response.ok) {
+      console.error('AgentQL error:', data);
+      return res.status(response.status).json(data);
+    }
+
+    return res.status(200).json(data);
   } catch (err) {
     console.error('Proxy error:', err);
     res.status(500).json({ error: err.message });
