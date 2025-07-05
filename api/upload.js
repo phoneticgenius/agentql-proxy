@@ -31,13 +31,12 @@ export default async function handler(req, res) {
       contentType,
     });
 
-    const graphqlQuery = {
-  query: `query {
-    job_posting {
-      job_title
-    }
-  }`
-};
+   const graphqlQuery = queryPrompt && typeof queryPrompt === 'string'
+      ? queryPrompt
+      : '{ job_posting { job_title } }'; const query {
+      job_posting {
+        job_title
+      }
 
 
     console.log('GraphQL query to send:', graphqlQuery);
