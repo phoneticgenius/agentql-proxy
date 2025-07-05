@@ -27,9 +27,10 @@ export default async function handler(req, res) {
 
     console.log('Appending file to formData');
     formData.append('file', fileBuffer, {
-      filename: fileName,
-      contentType,
-    });
+  filename: fileName || 'file.pdf',      // fallback just in case
+  contentType: contentType || 'application/pdf',
+  knownLength: fileBuffer.length         // optional but helpful
+});
 
    const graphqlQuery = queryPrompt && typeof queryPrompt === 'string'
   ? queryPrompt
