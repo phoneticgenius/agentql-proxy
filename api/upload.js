@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     });
 
    form_data.append('body', JSON.stringify({
-  query: '{ project { id lowest_bidder lowest_bid } }',
+  query: '{ query { jobtitle } }',
   params: { mode: 'fast' }
 }));
 
