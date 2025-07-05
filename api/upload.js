@@ -32,10 +32,6 @@ export default async function handler(req, res) {
     });
     console.log('Appended file to form');
 
-    console.log('Base64 length:', base64Pdf.length);
-    console.log('Base64 start:', base64Pdf.slice(0, 100));
-    console.log('Base64 end:', base64Pdf.slice(-100));
-
     const queryBody = { query: queryPrompt };
     console.log('Appending body field:', queryBody);
     form.append('body', JSON.stringify(queryBody));
