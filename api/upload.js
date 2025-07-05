@@ -8,6 +8,7 @@ export default async function handler(req, res) {
     const { fileBase64, fileName, contentType, queryPrompt } = req.body;
      console.log('Received fileName:', fileName);
     console.log('Received contentType:', contentType);
+    console.log('file size (bytes):', fileBuffer.length);
     console.log('Received queryPrompt:', queryPrompt);
     const fileBuffer = Buffer.from(fileBase64, 'base64');
 
