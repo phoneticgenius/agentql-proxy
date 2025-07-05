@@ -7,10 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { fileBase64, fileName, contentType, queryPrompt } = req.body;
+    const { fileBase64, fileName, contentType } = req.body;
     console.log('Received fileName:', fileName);
     console.log('Received contentType:', contentType);
-    console.log('Received queryPrompt:', queryPrompt);
 
     const fileBuffer = Buffer.from(fileBase64, 'base64');
     console.log('file size (bytes):', fileBuffer.length);
@@ -21,10 +20,18 @@ export default async function handler(req, res) {
       contentType: contentType,
     });
 
-   form_data.append('body', JSON.stringify({
-  query: '{ query { jobtitle } }',
-  params: { mode: 'fast' }
-}));
+    const graphqlQuery = `
+      query {
+        job_posting {
+          job_title
+        }
+      }
+    `;
+
+    formData.append('body', JSON.stringify({
+      query: graphqlQuery,
+      params: { mode: 'fast' }
+    }));
 
     console.log('Sending multipart/form-data to AgentQL...');
 
@@ -32,7 +39,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'X-API-Key': process.env.AGENTQL_API_KEY,
-        ...formData.getHeaders(),  // very important to include form-data headers here
+        ...formData.getHeaders(),
       },
       body: formData,
     });
