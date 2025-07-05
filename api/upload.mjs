@@ -1,33 +1,68 @@
-import fs from 'fs';
+// /api/upload.mjs
+
+import { Buffer } from 'buffer';
 import FormData from 'form-data';
+import mime from 'mime-types';
 
-async function main() {
-  const fetch = (await import('node-fetch')).default;
+export const config = {
+  runtime: 'edge', // Optional for Vercel
+};
 
-  // Make sure this path points to your actual file
-  const filePath = './my-file.pdf';
-  const file = fs.readFileSync(filePath);
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST is allowed' });
+  }
 
-  const form_data = new FormData();
-  form_data.append('file', file, {
-    filename: 'my-file.pdf',
-    contentType: 'application/pdf',
-  });
+  try {
+    const body = await streamToJSON(req);
 
-  form_data.append('body', JSON.stringify({ query: ' { query { job_title } } ' }));
-  form_data.append('params', JSON.stringify({ mode: 'fast' }));
+    const { fileBase64, fileName, contentType, queryPrompt } = body;
 
-  const response = await fetch('https://api.agentql.com/v1/query-document', {
-    method: 'POST',
-    headers: {
-      'X-API-Key': process.env.AGENTQL_API_KEY,
-      ...form_data.getHeaders(),
-    },
-    body: form_data,
-  });
+    if (!fileBase64 || !fileName || !queryPrompt) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-  const data = await response.json();
-  console.log(data);
+    const fileBuffer = Buffer.from(fileBase64, 'base64');
+
+    const form = new FormData();
+    form.append('file', fileBuffer, {
+      filename: fileName,
+      contentType: contentType || mime.lookup(fileName) || 'application/pdf',
+    });
+
+    form.append('body', JSON.stringify({ query: queryPrompt }));
+    form.append('params', JSON.stringify({ mode: 'fast' }));
+
+    const fetch = (await import('node-fetch')).default;
+
+    const agentqlResponse = await fetch('https://api.agentql.com/v1/query-document', {
+      method: 'POST',
+      headers: {
+        'X-API-Key': process.env.AGENTQL_API_KEY,
+        ...form.getHeaders(),
+      },
+      body: form,
+    });
+
+    const agentqlData = await agentqlResponse.json();
+
+    if (!agentqlResponse.ok) {
+      return res.status(agentqlResponse.status).json(agentqlData);
+    }
+
+    return res.status(200).json(agentqlData);
+  } catch (err) {
+    console.error('Proxy error:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 }
 
-main().catch(console.error);
+// Utility to read stream body as JSON
+async function streamToJSON(req) {
+  const buffers = [];
+  for await (const chunk of req) {
+    buffers.push(chunk);
+  }
+  const bodyStr = Buffer.concat(buffers).toString('utf-8');
+  return JSON.parse(bodyStr);
+}
