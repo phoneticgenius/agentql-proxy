@@ -1,4 +1,5 @@
 const FormData = require('form-data');
+import { Readable } from 'stream';
 
 export default async function handler(req, res) {
   console.log('Handler invoked');
@@ -26,11 +27,14 @@ export default async function handler(req, res) {
     const formData = new FormData();
 
     console.log('Appending file to formData');
-    formData.append('file', fileBuffer, {
-  filename: fileName || 'file.pdf',      // fallback just in case
-  contentType: contentType || 'application/pdf',
-  knownLength: fileBuffer.length         // optional but helpful
-});
+    
+    const stream = Readable.from(fileBuffer);
+
+    formData.append('file', stream, {
+      filename: fileName,
+      contentType: contentType,
+      knownLength: fileBuffer.length
+    });
 
    const graphqlQuery = queryPrompt && typeof queryPrompt === 'string'
   ? queryPrompt
