@@ -8,13 +8,17 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+console.log("🟢 Request method:", req.method);
+  
   // ✅ Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
+    console.log("✅ Handled CORS preflight");
     return res.status(200).end();
   }
 
   // ❌ Block all non-POST requests
   if (req.method !== 'POST') {
+     console.warn("⛔ Rejected non-POST request");
     return res.status(405).json({ error: 'Only POST is allowed' });
   }
 
