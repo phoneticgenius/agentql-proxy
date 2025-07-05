@@ -55,17 +55,4 @@ async function uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey
   return data;
 }
 
-// Example usage:
-(async () => {
-  try {
-    const filePath = './job_offer.pdf';  // adjust your local file path here
-    const fileName = 'job_offer.pdf';
-    const queryPrompt = '{ job_posting { job_title } }';
-    const apiKey = process.env.AGENTQL_API_KEY; // make sure this is set in your environment
-
-    const result = await uploadFileManualMultipart(filePath, fileName, queryPrompt, apiKey);
-    console.log('Response:', result);
-  } catch (err) {
-    console.error('Error:', err);
-  }
-})();
+module.exports = { uploadFileManualMultipart };
