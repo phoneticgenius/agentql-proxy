@@ -1,71 +1,30 @@
 import fs from 'fs';
-import path from 'path';
+import fetch from 'node-fetch'; // If using Node.js <18, else native fetch is available
+import FormData from 'form-data';
 
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+async function main() {
+  const file = fs.readFileSync('@path/to/file.pdf'); // Replace with actual file path
+  const form_data = new FormData();
 
-async function uploadFileManualMultipart(fileBuffer, fileName, queryPrompt, apiKey) {
-  const boundary = '------------------------abcdef1234567890';
-  const CRLF = '\r\n';
-
-  const jsonBody = JSON.stringify({
-    query: queryPrompt,
-    params: { mode: 'fast' }
+  form_data.append('file', file, {
+    filename: 'file.pdf',
+    contentType: 'application/pdf'
   });
 
-  const parts = [];
-
-  parts.push(Buffer.from(`--${boundary}${CRLF}`));
-  parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="${fileName}"${CRLF}`));
-  parts.push(Buffer.from(`Content-Type: application/octet-stream${CRLF}${CRLF}`));
-  parts.push(fileBuffer);
-  parts.push(Buffer.from(CRLF));
-
-  parts.push(Buffer.from(`--${boundary}${CRLF}`));
-  parts.push(Buffer.from(`Content-Disposition: form-data; name="body"${CRLF}`));
-  parts.push(Buffer.from(`Content-Type: application/json${CRLF}${CRLF}`));
-  parts.push(Buffer.from(jsonBody));
-  parts.push(Buffer.from(CRLF));
-
-  parts.push(Buffer.from(`--${boundary}--${CRLF}`));
-
-  const multipartBody = Buffer.concat(parts);
+  form_data.append('body', JSON.stringify({ query: ' { query { job_title } } ' }));
+  form_data.append('params', JSON.stringify({ mode: 'fast' }));
 
   const response = await fetch('https://api.agentql.com/v1/query-document', {
     method: 'POST',
     headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
-      'X-API-Key': apiKey,
-      'Content-Length': multipartBody.length.toString(),
+      'X-API-Key': process.env.AGENTQL_API_KEY, // use your API key here
+      ...form_data.getHeaders(),  // important for FormData in Node.js
     },
-    body: multipartBody
+    body: form_data
   });
 
   const data = await response.json();
-  return data;
+  console.log(data);
 }
 
-export default async function handler(req, res) {
-  try {
-    console.log('Request body:', req.body);
-
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed. Use POST.' });
-    }
-
-    const { fileBase64, fileName, queryPrompt, apiKey } = req.body;
-
-    if (!fileBase64 || !fileName || !queryPrompt || !apiKey) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const fileBuffer = Buffer.from(fileBase64, 'base64');
-
-    const result = await uploadFileManualMultipart(fileBuffer, fileName, queryPrompt, apiKey);
-
-    res.status(200).json(result);
-
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
-  }
-}
+main().catch(console.error);
