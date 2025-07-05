@@ -15,6 +15,8 @@ export default async function handler(req, res) {
     formData.append('file', new Blob([fileBuffer], { type: contentType }), fileName);
     formData.append('body', JSON.stringify({ params: { mode: 'fast' }, query: queryPrompt }));
 
+    console.log('Sending multipart/form-data to AgentQL...');
+
     const response = await fetch('https://api.agentql.com/v1/query-document', {
       method: 'POST',
       headers: {
@@ -24,6 +26,7 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log('AgentQL response:', data);
     res.status(response.status).json(data);
 
   } catch (err) {
