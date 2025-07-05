@@ -1,4 +1,4 @@
-import FormData from 'form-data';
+const FormData = require('form-data');
 
 export default async function handler(req, res) {
   console.log('Handler invoked');
