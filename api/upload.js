@@ -1,8 +1,3 @@
-// File: api/upload.js
-
-import FormData from 'form-data';
-import fetch from 'node-fetch';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -13,20 +8,16 @@ export default async function handler(req, res) {
     const { fileBase64, fileName, contentType, queryPrompt } = req.body;
     const fileBuffer = Buffer.from(fileBase64, 'base64');
 
-    const form = new FormData();
-    form.append('file', fileBuffer, { filename: fileName, contentType });
-    form.append(
-      'body',
-      JSON.stringify({ params: { mode: 'fast' }, query: queryPrompt })
-    );
+    const formData = new FormData();
+    formData.append('file', new Blob([fileBuffer], { type: contentType }), fileName);
+    formData.append('body', JSON.stringify({ params: { mode: 'fast' }, query: queryPrompt }));
 
     const response = await fetch('https://api.agentql.com/v1/query-document', {
       method: 'POST',
       headers: {
-        'X-API-Key': process.env.AGENTQL_API_KEY,
-        ...form.getHeaders()
+        'X-API-Key': process.env.AGENTQL_API_KEY
       },
-      body: form
+      body: formData
     });
 
     const data = await response.json();
