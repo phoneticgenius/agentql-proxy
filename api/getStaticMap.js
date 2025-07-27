@@ -3,15 +3,12 @@
 // Change this line:
 // const fetch = require('node-fetch');
 
-// To this line:
-// Use a dynamic import for node-fetch
+// To this line (and the subsequent logic):
 let fetch;
 import('node-fetch').then(module => {
     fetch = module.default;
 }).catch(error => {
     console.error("Failed to load node-fetch:", error);
-    // Handle error if node-fetch cannot be loaded
-    // You might want to exit the process or provide a fallback
 });
 
 
