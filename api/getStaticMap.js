@@ -37,4 +37,10 @@ export default async function handler(req, res) {
     console.error("Fetch error:", error);
     res.status(500).json({ error: "Failed to fetch map image." });
   }
+
+  export default async function handler(req, res) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  console.log("API Key length:", apiKey ? apiKey.length : "undefined");
+  res.status(200).json({ message: "Test OK" });
+}
 }
