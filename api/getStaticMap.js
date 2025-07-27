@@ -1,4 +1,9 @@
 module.exports = async function handler(req, res) {
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS'); // Allow GET for data, OPTIONS for preflight
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Specify allowed headers
+
   // No import needed — fetch is global
   const { address } = req.query;
   const apiKey = process.env.Maps_API_KEY;
