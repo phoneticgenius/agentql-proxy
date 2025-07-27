@@ -1,11 +1,27 @@
 // api/getStaticMap.js
-import fetch from 'node-fetch'; // Vercel's Node.js runtime has fetch available or you can use axios as before.
+import fetch from 'node-fetch';
 
 // Load API key from environment variables configured in Vercel
 // This is crucial for security.
 const GOOGLE_STATIC_MAPS_API_KEY = process.env.GOOGLE_STATIC_MAPS_API_KEY;
 
 export default async function handler(req, res) {
+    // === ADDED CORS HEADERS ===
+    // IMPORTANT: Replace 'https://yourwixdomain.com' with the actual domain(s) of your Wix site.
+    // If your Wix site has a custom domain like 'https://www.jobsitenow.de', use that.
+    // If you're testing in the Wix editor, you might need to find the editor's origin (e.g., 'https://editor.wix.com').
+    // For multiple allowed origins, you'd check the request.headers.origin and set Access-Control-Allow-Origin dynamically.
+    // For simplicity, here we use a single placeholder.
+    res.setHeader('Access-Control-Allow-Origin', 'https://yourwixdomain.com'); // <--- **YOU MUST CHANGE THIS!**
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS'); // Allow GET for fetching, OPTIONS for preflight
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Allow Content-Type header
+
+    // Handle preflight OPTIONS request (browsers send this before the actual GET request)
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end(); // Respond to preflight with 200 OK
+    }
+    // =============================
+
     // Ensure API key is set
     if (!GOOGLE_STATIC_MAPS_API_KEY) {
         console.error("GOOGLE_STATIC_MAPS_API_KEY environment variable is not set!");
