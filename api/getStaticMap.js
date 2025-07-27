@@ -1,22 +1,5 @@
-// /api/getStaticMap.js
-
-// Change this line:
-// const fetch = require('node-fetch');
-
-// To this line (and the subsequent logic):
-let fetch;
-import('node-fetch').then(module => {
-    fetch = module.default;
-}).catch(error => {
-    console.error("Failed to load node-fetch:", error);
-});
-
-
 module.exports = async function handler(req, res) {
-  // Ensure fetch is loaded before proceeding
-  if (!fetch) {
-    return res.status(500).json({ error: "Server is initializing. Please try again shortly." });
-  }
+  const fetch = require('node-fetch');
 
   const { address } = req.query;
   const apiKey = process.env.Maps_API_KEY;
