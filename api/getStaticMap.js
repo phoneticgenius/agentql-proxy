@@ -1,13 +1,31 @@
 // /api/getStaticMap.js
 
-const fetch = require('node-fetch'); // if you need fetch polyfill, else remove this line
+// Change this line:
+// const fetch = require('node-fetch');
+
+// To this line:
+// Use a dynamic import for node-fetch
+let fetch;
+import('node-fetch').then(module => {
+    fetch = module.default;
+}).catch(error => {
+    console.error("Failed to load node-fetch:", error);
+    // Handle error if node-fetch cannot be loaded
+    // You might want to exit the process or provide a fallback
+});
+
 
 module.exports = async function handler(req, res) {
+  // Ensure fetch is loaded before proceeding
+  if (!fetch) {
+    return res.status(500).json({ error: "Server is initializing. Please try again shortly." });
+  }
+
   const { address } = req.query;
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.Maps_API_KEY;
 
   if (!apiKey) {
-    console.error("Missing GOOGLE_MAPS_API_KEY");
+    console.error("Missing Maps_API_KEY");
     return res.status(500).json({ error: "Server misconfiguration: missing API key." });
   }
 
