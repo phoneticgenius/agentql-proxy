@@ -13,11 +13,28 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(googleMapURL);
-    const buffer = await response.arrayBuffer();
+    console.log("Google Maps response status:", response.status);
 
+    if (!response.ok) {
+      // Google API returned an error status
+      const errorText = await response.text();
+      console.error("Google Maps API error response:", errorText);
+      return res.status(500).json({ error: "Failed to fetch map image from Google Maps API." });
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.startsWith("image/")) {
+      // Response is not an image, maybe an error JSON or HTML page
+      const errorBody = await response.text();
+      console.error("Unexpected content type or body from Google Maps:", contentType, errorBody);
+      return res.status(500).json({ error: "Google Maps API did not return an image." });
+    }
+
+    const buffer = await response.arrayBuffer();
     res.setHeader("Content-Type", "image/png");
     res.send(Buffer.from(buffer));
   } catch (error) {
+    console.error("Fetch error:", error);
     res.status(500).json({ error: "Failed to fetch map image." });
   }
 }
