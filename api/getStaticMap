@@ -1,11 +1,11 @@
 // api/getStaticMap.js
 import fetch from 'node-fetch';
 
-// Load API key from environment variables configured in Vercel
-// This is crucial for security.
 const GOOGLE_STATIC_MAPS_API_KEY = process.env.GOOGLE_STATIC_MAPS_API_KEY;
 
 export default async function handler(req, res) {
+    console.log(`Vercel Function: Incoming request - Method: ${req.method}, Path: ${req.url}`);
+
     // === ADDED CORS HEADERS ===
     // IMPORTANT: Replace 'https://yourwixdomain.com' with the actual domain(s) of your Wix site.
     // If your Wix site has a custom domain like 'https://www.jobsitenow.de', use that.
@@ -13,54 +13,50 @@ export default async function handler(req, res) {
     // For multiple allowed origins, you'd check the request.headers.origin and set Access-Control-Allow-Origin dynamically.
     // For simplicity, here we use a single placeholder.
     res.setHeader('Access-Control-Allow-Origin', 'https://yourwixdomain.com'); // <--- **YOU MUST CHANGE THIS!**
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS'); // Allow GET for fetching, OPTIONS for preflight
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Allow Content-Type header
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle preflight OPTIONS request (browsers send this before the actual GET request)
+    // Handle preflight OPTIONS request
     if (req.method === 'OPTIONS') {
-        return res.status(200).end(); // Respond to preflight with 200 OK
+        console.log("Vercel Function: Received OPTIONS (preflight) request. Responding with 200 OK.");
+        return res.status(200).end();
     }
     // =============================
 
-    // Ensure API key is set
     if (!GOOGLE_STATIC_MAPS_API_KEY) {
-        console.error("GOOGLE_STATIC_MAPS_API_KEY environment variable is not set!");
+        console.error("Vercel Function: GOOGLE_STATIC_MAPS_API_KEY environment variable is not set!");
         return res.status(500).send('Server configuration error: Map API key missing.');
     }
 
     const { address } = req.query;
+    console.log(`Vercel Function: Extracted address parameter: "${address}"`);
 
     if (!address) {
+        console.warn("Vercel Function: Address parameter is missing in the request.");
         return res.status(400).send('Address parameter is required.');
     }
 
     try {
-        // Construct the Google Static Maps API URL
-        // You can customize size, zoom, markers, etc.
         const staticMapsUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(address)}&zoom=15&size=600x300&markers=color:red%7Clabel:A%7C${encodeURIComponent(address)}&key=${GOOGLE_STATIC_MAPS_API_KEY}`;
-
-        console.log(`Fetching static map for address: "${address}" from: ${staticMapsUrl}`);
+        console.log(`Vercel Function: Making request to Google Static Maps API URL: ${staticMapsUrl}`);
 
         const response = await fetch(staticMapsUrl);
+        console.log(`Vercel Function: Received response from Google Static Maps API. Status: ${response.status}`);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Google Static Maps API error: ${response.status} ${response.statusText} - ${errorText}`);
+            console.error(`Vercel Function: Google Static Maps API returned non-OK status. Error: ${response.status} ${response.statusText} - ${errorText}`);
             return res.status(response.status).send(`Error from Google Maps API: ${errorText}`);
         }
 
-        // Get the image data as an ArrayBuffer
         const imageBuffer = await response.arrayBuffer();
-
-        // Set the appropriate content type header for the image
         const contentType = response.headers.get('content-type') || 'image/png';
         res.setHeader('Content-Type', contentType);
-
-        // Send the image buffer as the response
-        res.send(Buffer.from(imageBuffer)); // Convert ArrayBuffer to Node.js Buffer
+        res.send(Buffer.from(imageBuffer));
+        console.log(`Vercel Function: Successfully fetched and sent map image. Content-Type: ${contentType}`);
 
     } catch (error) {
-        console.error('Error in Vercel Serverless Function (getStaticMap):', error.message);
+        console.error('Vercel Function: Uncaught error during map image generation:', error.message);
         res.status(500).send('Internal server error while generating map image.');
     }
 }
