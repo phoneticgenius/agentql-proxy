@@ -1,6 +1,5 @@
 module.exports = async function handler(req, res) {
-  const fetch = require('node-fetch');
-
+  // No import needed — fetch is global
   const { address } = req.query;
   const apiKey = process.env.Maps_API_KEY;
 
