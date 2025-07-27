@@ -1,62 +1,23 @@
-// api/getStaticMap.js
-import fetch from 'node-fetch';
-
-const GOOGLE_STATIC_MAPS_API_KEY = process.env.GOOGLE_STATIC_MAPS_API_KEY;
+// /api/static-map.js
 
 export default async function handler(req, res) {
-    console.log(`Vercel Function: Incoming request - Method: ${req.method}, Path: ${req.url}`);
+  const { address } = req.query;
 
-    // === ADDED CORS HEADERS ===
-    // IMPORTANT: Replace 'https://yourwixdomain.com' with the actual domain(s) of your Wix site.
-    // If your Wix site has a custom domain like 'https://www.jobsitenow.de', use that.
-    // If you're testing in the Wix editor, you might need to find the editor's origin (e.g., 'https://editor.wix.com').
-    // For multiple allowed origins, you'd check the request.headers.origin and set Access-Control-Allow-Origin dynamically.
-    // For simplicity, here we use a single placeholder.
-    res.setHeader('Access-Control-Allow-Origin', 'https://yourwixdomain.com'); // <--- **YOU MUST CHANGE THIS!**
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (!address) {
+    return res.status(400).json({ error: "Address is required" });
+  }
 
-    // Handle preflight OPTIONS request
-    if (req.method === 'OPTIONS') {
-        console.log("Vercel Function: Received OPTIONS (preflight) request. Responding with 200 OK.");
-        return res.status(200).end();
-    }
-    // =============================
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const encodedAddress = encodeURIComponent(address);
+  const googleMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodedAddress}&zoom=15&size=600x300&markers=color:red%7C${encodedAddress}&key=${apiKey}`;
 
-    if (!GOOGLE_STATIC_MAPS_API_KEY) {
-        console.error("Vercel Function: GOOGLE_STATIC_MAPS_API_KEY environment variable is not set!");
-        return res.status(500).send('Server configuration error: Map API key missing.');
-    }
+  try {
+    const response = await fetch(googleMapURL);
+    const buffer = await response.arrayBuffer();
 
-    const { address } = req.query;
-    console.log(`Vercel Function: Extracted address parameter: "${address}"`);
-
-    if (!address) {
-        console.warn("Vercel Function: Address parameter is missing in the request.");
-        return res.status(400).send('Address parameter is required.');
-    }
-
-    try {
-        const staticMapsUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(address)}&zoom=15&size=600x300&markers=color:red%7Clabel:A%7C${encodeURIComponent(address)}&key=${GOOGLE_STATIC_MAPS_API_KEY}`;
-        console.log(`Vercel Function: Making request to Google Static Maps API URL: ${staticMapsUrl}`);
-
-        const response = await fetch(staticMapsUrl);
-        console.log(`Vercel Function: Received response from Google Static Maps API. Status: ${response.status}`);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Vercel Function: Google Static Maps API returned non-OK status. Error: ${response.status} ${response.statusText} - ${errorText}`);
-            return res.status(response.status).send(`Error from Google Maps API: ${errorText}`);
-        }
-
-        const imageBuffer = await response.arrayBuffer();
-        const contentType = response.headers.get('content-type') || 'image/png';
-        res.setHeader('Content-Type', contentType);
-        res.send(Buffer.from(imageBuffer));
-        console.log(`Vercel Function: Successfully fetched and sent map image. Content-Type: ${contentType}`);
-
-    } catch (error) {
-        console.error('Vercel Function: Uncaught error during map image generation:', error.message);
-        res.status(500).send('Internal server error while generating map image.');
-    }
+    res.setHeader("Content-Type", "image/png");
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch map image." });
+  }
 }
