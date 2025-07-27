@@ -38,9 +38,20 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Failed to fetch map image." });
   }
 
-  export default async function handler(req, res) {
+ export default async function handler(req, res) {
+  const { address } = req.query;
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  console.log("API Key length:", apiKey ? apiKey.length : "undefined");
-  res.status(200).json({ message: "Test OK" });
+
+  if (!apiKey) {
+    console.error("Missing GOOGLE_MAPS_API_KEY");
+    return res.status(500).json({ error: "Server misconfiguration: missing API key." });
+  }
+
+  if (!address) {
+    return res.status(400).json({ error: "Address is required" });
+  }
+
+   export default function handler(req, res) {
+  res.status(200).json({ message: "Hello from API" });
 }
 }
